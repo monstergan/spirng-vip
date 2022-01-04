@@ -1,5 +1,6 @@
 package com.monster.service;
 
+import com.spring.Autowired;
 import com.spring.Component;
 import com.spring.Scope;
 
@@ -13,7 +14,10 @@ import com.spring.Scope;
 @Scope("prototype")
 public class UserService {
 
+    @Autowired
+     private OrderService orderService;
+
     public void test(){
-        System.out.println("testsssss");
+        System.out.println(orderService);
     }
 }
