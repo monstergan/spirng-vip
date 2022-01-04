@@ -66,6 +66,12 @@ public class MonsterApplicationContext {
                     field.set(instance, getBean(field.getName()));
                 }
             }
+
+            //实现初始化
+            if (instance instanceof InitializingBean) {
+                ((InitializingBean) instance).afterPropertiesSet();
+            }
+
         } catch (InstantiationException e) {
             e.printStackTrace();
         } catch (IllegalAccessException e) {
