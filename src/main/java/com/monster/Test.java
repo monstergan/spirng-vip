@@ -1,5 +1,6 @@
 package com.monster;
 
+import com.monster.service.UserInterface;
 import com.monster.service.UserService;
 import com.spring.MonsterApplicationContext;
 
@@ -15,7 +16,7 @@ public class Test {
         MonsterApplicationContext applicationContext = new MonsterApplicationContext(Appconfig.class);
 
 
-        UserService userService = (UserService) applicationContext.getBean("userService");
+        UserInterface userService = (UserInterface) applicationContext.getBean("userService");
 //        userService.test();
         System.out.println(userService);
 //        System.out.println(applicationContext.getBean("userService"));

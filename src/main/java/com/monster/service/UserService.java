@@ -13,17 +13,15 @@ import com.spring.Scope;
  **/
 @Component("userService")
 @Scope("prototype")
-public class UserService implements InitializingBean {
+public class UserService implements UserInterface {
 
     @Autowired
      private OrderService orderService;
 
+
+    @Override
     public void test(){
         System.out.println(orderService);
     }
 
-    @Override
-    public void afterPropertiesSet() {
-
-    }
 }

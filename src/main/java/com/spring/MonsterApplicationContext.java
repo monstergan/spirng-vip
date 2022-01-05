@@ -1,13 +1,13 @@
 package com.spring;
 
+import com.monster.service.MonsterBeanPostProcessor;
+
 import java.beans.Introspector;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * @className: MonsterApplicationContext
@@ -21,6 +21,8 @@ public class MonsterApplicationContext {
 
     private Map<String, BeanDefinition> beanDefinitionMap = new HashMap<>();
 
+    private List<BeanPostProcessor> beanPostProcessorList = new ArrayList<>();
+
     /**
      * 单例池
      */
@@ -32,6 +34,8 @@ public class MonsterApplicationContext {
         this.configClass = configClass;
         //扫描
         scan(configClass);
+
+        //创建单例bean
         for (Map.Entry<String, BeanDefinition> entry : beanDefinitionMap.entrySet()) {
             String beanName = entry.getKey();
             BeanDefinition beanDefinition = entry.getValue();
@@ -57,8 +61,9 @@ public class MonsterApplicationContext {
         Class clazz = beanDefinition.getType();
         Object instance = null;
         try {
+            //实例化对象
             instance = clazz.getConstructor().newInstance();
-            //获取对象
+            //依赖注入
             for (Field field : clazz.getDeclaredFields()) {
                 if (field.isAnnotationPresent(Autowired.class)) {
                     //开启反射
@@ -66,10 +71,14 @@ public class MonsterApplicationContext {
                     field.set(instance, getBean(field.getName()));
                 }
             }
-
             //实现初始化
             if (instance instanceof InitializingBean) {
                 ((InitializingBean) instance).afterPropertiesSet();
+            }
+
+            //实现AOP原理
+            for (BeanPostProcessor beanPostProcessor : beanPostProcessorList) {
+                instance = beanPostProcessor.postProcessAfterInitialization(instance, beanName);
             }
 
         } catch (InstantiationException e) {
@@ -138,7 +147,17 @@ public class MonsterApplicationContext {
                     absolutePath = absolutePath.replace("/", ".");
                     try {
                         Class<?> clazz = classLoader.loadClass(absolutePath);
+                        //判断当前类是否有Component注解
                         if (clazz.isAnnotationPresent(Component.class)) {
+
+                            //判断类是否实现BeanPostProcessor接口
+                            if (BeanPostProcessor.class.isAssignableFrom(clazz)) {
+                                //根据类的无参构造方法来实例化对象
+                                BeanPostProcessor instance = (BeanPostProcessor) clazz.getConstructor().newInstance();
+                                //将实例化好的对象添加到缓存
+                                beanPostProcessorList.add(instance);
+                            }
+
                             Component componentAnnotation = clazz.getAnnotation(Component.class);
                             String beanName = componentAnnotation.value();
                             //如果没有设置名字，则生成默认bean的名称
@@ -157,7 +176,13 @@ public class MonsterApplicationContext {
                             }
                             beanDefinitionMap.put(beanName, beanDefinition);
                         }
-                    } catch (ClassNotFoundException e) {
+                    } catch (ClassNotFoundException | NoSuchMethodException e) {
+                        e.printStackTrace();
+                    } catch (InvocationTargetException e) {
+                        e.printStackTrace();
+                    } catch (InstantiationException e) {
+                        e.printStackTrace();
+                    } catch (IllegalAccessException e) {
                         e.printStackTrace();
                     }
                 }
